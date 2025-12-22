@@ -1,0 +1,25 @@
+{
+  "models": [
+    "LogisticRegression",
+    "XGBoostClassifier"
+  ],
+  "n_features": 40,
+  "target": "purchase_cat_0",
+  "classes": [
+    "__UNKNOWN__",
+    "accessories",
+    "apparel",
+    "appliances",
+    "auto",
+    "computers",
+    "construction",
+    "country_yard",
+    "electronics",
+    "furniture",
+    "kids",
+    "medicine",
+    "sport",
+    "stationery"
+  ],
+  "unknown_class_label": "__UNKNOWN__"
+}

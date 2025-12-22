@@ -1,22 +1,80 @@
-# macOS
+# -------------------------------------------------
+# OS / Editor noise
+# -------------------------------------------------
 .DS_Store
-
-# Backups (never commit)
-_backup_before_reset/
-
-# Virtual environments
-.venv/
-venv/
-
-# Data artefacts
-data/
-*.parquet
-
-# Python cache
-__pycache__/
-*.pyc
-
-# IDEs
+Thumbs.db
+*.swp
+*.swo
 .vscode/
 .idea/
 
+# -------------------------------------------------
+# Python environment
+# -------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+.venv/
+env/
+venv/
+
+# -------------------------------------------------
+# Large raw & intermediate datasets (DO NOT COMMIT)
+# -------------------------------------------------
+data/*.parquet
+data/**/*.parquet
+data/*.csv
+data/**/*.csv
+
+# Explicitly ignore known large dataset files
+data/train.parquet
+data/val.parquet
+data/test.parquet
+data/full_data.parquet
+data/processed/all_features*.parquet
+data/processed/*_n.parquet
+
+# Sanity / debug artefacts
+data/sanity_table.csv
+
+# -------------------------------------------------
+# Demo data (INTENTIONALLY TRACKED)
+# -------------------------------------------------
+# Keep demo data for Streamlit visualisation
+!data/demo/
+!data/demo/demo_user_events.parquet
+!data/demo/demo_user_features.parquet
+
+# -------------------------------------------------
+# Models (KEEP trained models, ignore backups)
+# -------------------------------------------------
+# Keep production models for Streamlit Cloud
+!models/reco/
+!models/reco/*.pkl
+!models/reco/*.json
+
+# Ignore old / backup / snapshot models
+_backup_before_reset/
+models/pretrained/
+models/**/pretrained/
+
+# -------------------------------------------------
+# Binary artefacts not required for inference
+# -------------------------------------------------
+*.npy
+*.npz
+*.ubj
+
+# -------------------------------------------------
+# Logs & temp files
+# -------------------------------------------------
+*.log
+*.tmp
+*.bak
+
+# -------------------------------------------------
+# Streamlit cache
+# -------------------------------------------------
+.streamlit/cache/
