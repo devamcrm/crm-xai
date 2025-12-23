@@ -76,10 +76,13 @@ p = purchases.with_columns([
 ])
 
 p = p.with_columns([
-    (pl.col("purchase_time") - pl.col("prev_purchase_time")).dt.total_days().alias("p_purchase_recency"),
+    (pl.col("purchase_time") - pl.col("prev_purchase_time"))
+        .dt.total_days()
+        .alias("p_purchase_recency"),
     pl.col("purchase_idx").alias("p_purchase_count"),
 ])
 
+# Average frequency (days between purchases)
 p = p.with_columns(
     pl.when(pl.col("purchase_idx") > 1)
       .then(
@@ -90,6 +93,7 @@ p = p.with_columns(
       .alias("p_purchase_frequency")
 )
 
+# Cumulative purchase stats
 p = p.with_columns([
     pl.col("price").cum_sum().shift(1).over("purchase_user_id").alias("p_purchase_value"),
     pl.col("purchase_pid").n_unique().over("purchase_user_id").shift(1).alias("p_purchase_products"),
@@ -97,17 +101,20 @@ p = p.with_columns([
     pl.col("brand").n_unique().over("purchase_user_id").shift(1).alias("p_purchase_brands"),
 ])
 
+# Per-category purchase counts
 for c in cat_0_values:
     p = p.with_columns(
         pl.when(pl.col("purchase_cat_0") == c)
-          .then(1).otherwise(0)
-          .cum_sum().shift(1)
+          .then(1)
+          .otherwise(0)
+          .cum_sum()
+          .shift(1)
           .over("purchase_user_id")
           .alias(f"p_purchase_count_{c}")
     )
 
 # --------------------------------------------------
-# Cart history features (SCALAR, MODEL-SAFE)
+# Cart history features
 # --------------------------------------------------
 print("🧺 Computing cart history features...")
 
@@ -118,41 +125,23 @@ pc = (
 
 cart_aggs = pc.group_by("purchase_id").agg([
 
-    # Last cart time (scalar)
     pl.col("cart_time").max().alias("last_cart_time"),
-
-    # First cart time (scalar)
     pl.col("cart_time").min().alias("first_cart_time"),
 
-    # Cart count
     pl.len().alias("cart_count"),
-
-    # Cart value
     pl.col("price").sum().alias("cart_value"),
 
-    # Distincts
     pl.col("product_id").n_unique().alias("cart_products"),
     pl.col("cat_0").n_unique().alias("cart_cat_0"),
     pl.col("brand").n_unique().alias("cart_brands"),
 
-    # Per-category cart counts
     *[
         (pl.col("cat_0") == c).sum().alias(f"cart_count_{c}")
         for c in cat_0_values
     ]
 ])
 
-# --------------------------------------------------
-# Derived cart metrics (scalar math)
-# --------------------------------------------------
-cart_aggs = cart_aggs.with_columns([
-
-    # cart_recency = purchase_time - last_cart_time
-    (pl.col("last_cart_time") - pl.col("last_cart_time"))
-    .alias("_dummy")  # placeholder, overwritten below
-])
-
-# Join purchase_time back to compute recency/frequency safely
+# Join purchase_time back for recency calc
 cart_aggs = cart_aggs.join(
     p.select(["purchase_id", "purchase_time"]),
     on="purchase_id",
@@ -161,12 +150,10 @@ cart_aggs = cart_aggs.join(
 
 cart_aggs = cart_aggs.with_columns([
 
-    # cart_recency (scalar int days)
     (pl.col("purchase_time") - pl.col("last_cart_time"))
         .dt.total_days()
         .alias("cart_recency"),
 
-    # cart_frequency = (last - first) / (count - 1)
     pl.when(pl.col("cart_count") > 1)
       .then(
           (pl.col("last_cart_time") - pl.col("first_cart_time"))
@@ -176,12 +163,10 @@ cart_aggs = cart_aggs.with_columns([
       .alias("cart_frequency")
 ])
 
-# Drop helper columns
 cart_aggs = cart_aggs.drop([
     "last_cart_time",
     "first_cart_time",
     "purchase_time",
-    "_dummy"
 ])
 
 # --------------------------------------------------
@@ -189,12 +174,46 @@ cart_aggs = cart_aggs.drop([
 # --------------------------------------------------
 final = p.join(cart_aggs, on="purchase_id", how="left")
 
+# --------------------------------------------------
+# 🔑 CRITICAL FIX: cold-start + NULL handling
+# --------------------------------------------------
+
+# Explicit cold-start flag
+final = final.with_columns(
+    pl.when(pl.col("p_purchase_count") <= 1)
+      .then(1)
+      .otherwise(0)
+      .alias("is_new_customer")
+)
+
+# Fill all numeric NULLs → 0 (LR-safe)
+numeric_cols = [
+    c for c, t in final.collect_schema().items()
+    if t in (pl.Int64, pl.Int32, pl.UInt32, pl.Float64)
+    and c != "purchase_cat_0"
+]
+
+final = final.with_columns([
+    pl.col(c).fill_null(0).alias(c) for c in numeric_cols
+])
+
+# Target hygiene
+final = final.with_columns(
+    pl.col("purchase_cat_0")
+      .fill_null("__UNKNOWN__")
+      .alias("purchase_cat_0")
+)
+
+# --------------------------------------------------
+# Output
+# --------------------------------------------------
 final_cols = [
     "purchase_source",
     "purchase_time",
     "purchase_cat_0",
     "purchase_user_id",
     "purchase_id",
+    "is_new_customer",
     "p_purchase_recency",
     "p_purchase_frequency",
     "p_purchase_value",
@@ -218,3 +237,4 @@ print("💾 Writing all_features.parquet...")
 final.select(final_cols).collect().write_parquet(OUT_PATH)
 
 print("✅ 05_data_prepare.py completed successfully")
+print("📌 Cold-start encoded | NULL-safe | LR + XGB ready")

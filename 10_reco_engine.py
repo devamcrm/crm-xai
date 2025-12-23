@@ -76,6 +76,7 @@ joblib.dump(label_encoder, MODEL_DIR / "label_encoder.pkl")
 # -------------------------------------------------------
 
 BASE_FEATURES = [
+    "is_new_customer",
     "p_purchase_recency",
     "p_purchase_frequency",
     "p_purchase_value",

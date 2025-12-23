@@ -1,80 +1,22 @@
-# -------------------------------------------------
-# OS / Editor noise
-# -------------------------------------------------
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-.vscode/
-.idea/
-
-# -------------------------------------------------
-# Python environment
-# -------------------------------------------------
+# Python
 __pycache__/
-*.py[cod]
-*.pyo
-*.egg-info/
-.eggs/
+*.pyc
 .venv/
-env/
-venv/
 
-# -------------------------------------------------
-# Large raw & intermediate datasets (DO NOT COMMIT)
-# -------------------------------------------------
-data/*.parquet
-data/**/*.parquet
-data/*.csv
-data/**/*.csv
+# OS
+.DS_Store
 
-# Explicitly ignore known large dataset files
-data/train.parquet
-data/val.parquet
-data/test.parquet
+# Large data (rebuildable)
 data/full_data.parquet
-data/processed/all_features*.parquet
-data/processed/*_n.parquet
+data/processed/
+data/train.parquet
+data/test.parquet
+data/val.parquet
 
-# Sanity / debug artefacts
-data/sanity_table.csv
 
-# -------------------------------------------------
-# Demo data (INTENTIONALLY TRACKED)
-# -------------------------------------------------
-# Keep demo data for Streamlit visualisation
-!data/demo/
-!data/demo/demo_user_events.parquet
-!data/demo/demo_user_features.parquet
-
-# -------------------------------------------------
-# Models (KEEP trained models, ignore backups)
-# -------------------------------------------------
-# Keep production models for Streamlit Cloud
-!models/reco/
-!models/reco/*.pkl
-!models/reco/*.json
-
-# Ignore old / backup / snapshot models
+# Backups & research
 _backup_before_reset/
-models/pretrained/
-models/**/pretrained/
+_research_pipeline/
 
-# -------------------------------------------------
-# Binary artefacts not required for inference
-# -------------------------------------------------
-*.npy
-*.npz
-*.ubj
-
-# -------------------------------------------------
-# Logs & temp files
-# -------------------------------------------------
-*.log
-*.tmp
-*.bak
-
-# -------------------------------------------------
-# Streamlit cache
-# -------------------------------------------------
-.streamlit/cache/
+# Optional legacy model
+models/reco/logistic_regression.pkl

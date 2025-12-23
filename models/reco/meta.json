@@ -3,7 +3,7 @@
     "LogisticRegression",
     "XGBoostClassifier"
   ],
-  "n_features": 40,
+  "n_features": 41,
   "target": "purchase_cat_0",
   "classes": [
     "__UNKNOWN__",

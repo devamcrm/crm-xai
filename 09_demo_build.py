@@ -93,6 +93,8 @@ purchase_aggs = [
         pl.lit(PREDICTION_TIME.strftime("%Y%m%d%H%M%S"))
     ).alias("purchase_id"),
 
+    pl.lit(0).cast(pl.Int32).alias("is_new_customer"),
+
     # Recency
     (pl.lit(PREDICTION_TIME) - pl.col("timestamp").max())
         .dt.total_days()
